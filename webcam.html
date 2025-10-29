@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Webcam Uygulaması</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 0;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            margin-bottom: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            background-color: #000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        #video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button:disabled {
+            background: linear-gradient(to right, #cccccc, #aaaaaa);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        #capture-btn {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+        }
+        
+        .photo-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .photo-item {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-item .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .status {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+        }
+        
+        .instructions h2 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+            
+            .photo-item {
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Online Webcam Uygulaması</h1>
+    
+    <div class="container">
+        <div class="video-container">
+            <video id="video" autoplay playsinline></video>
+        </div>
+        
+        <div class="status" id="status">
+            Webcam'e erişim için izin verin...
+        </div>
+        
+        <div class="controls">
+            <button id="start-btn">Webcam'i Başlat</button>
+            <button id="capture-btn" disabled>Fotoğraf Çek</button>
+            <button id="stop-btn" disabled>Webcam'i Durdur</button>
+        </div>
+        
+        <div class="photo-container" id="photo-container">
+            <!-- Çekilen fotoğraflar burada görünecek -->
+        </div>
+        
+        <div class="instructions">
+            <h2>Kullanım Talimatları</h2>
+            <ol>
+                <li>"Webcam'i Başlat" butonuna tıklayarak webcam'inizi etkinleştirin</li>
+                <li>Webcam'inize erişim izni verin</li>
+                <li>"Fotoğraf Çek" butonuna tıklayarak fotoğraf çekin</li>
+                <li>Çekilen fotoğrafları bilgisayarınıza indirebilirsiniz</li>
+                <li>İşiniz bittiğinde "Webcam'i Durdur" butonuna tıklayın</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // DOM elementlerini seçme
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('start-btn');
+        const captureBtn = document.getElementById('capture-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const status = document.getElementById('status');
+        const photoContainer = document.getElementById('photo-container');
+        
+        let stream = null;
+        
+        // Webcam'i başlatma
+        async function startWebcam() {
+            try {
+                status.textContent = "Webcam başlatılıyor...";
+                
+                // Kullanıcının webcam'ine erişim isteği
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }, 
+                    audio: false 
+                });
+                
+                // Video elementine stream'i bağlama
+                video.srcObject = stream;
+                
+                // Buton durumlarını güncelleme
+                startBtn.disabled = true;
+                captureBtn.disabled = false;
+                stopBtn.disabled = false;
+                
+                status.textContent = "Webcam başarıyla başlatıldı!";
+            } catch (err) {
+                console.error("Webcam hatası:", err);
+                status.textContent = "Webcam başlatılamadı. Lütfen izin verdiğinizden emin olun.";
+            }
+        }
+        
+        // Webcam'i durdurma
+        function stopWebcam() {
+            if (stream) {
+                // Tüm track'leri durdurma
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                
+                // Video elementini temizleme
+                video.srcObject = null;
+                
+                // Buton durumlarını güncelleme
+                startBtn.disabled = false;
+                captureBtn.disabled = true;
+                stopBtn.disabled = true;
+                
+                status.textContent = "Webcam durduruldu.";
+            }
+        }
+        
+        // Fotoğraf çekme
+        function capturePhoto() {
+            if (!stream) return;
+            
+            // Canvas oluşturma
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Canvas üzerine video frame'ini çizme
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Canvas'tan data URL alma
+            const dataURL = canvas.toDataURL('image/png');
+            
+            // Fotoğrafı görüntüleme
+            displayPhoto(dataURL);
+        }
+        
+        // Fotoğrafı görüntüleme
+        function displayPhoto(dataURL) {
+            // Fotoğraf container'ı oluşturma
+            const photoItem = document.createElement('div');
+            photoItem.className = 'photo-item';
+            
+            // Fotoğraf elementini oluşturma
+            const img = document.createElement('img');
+            img.src = dataURL;
+            img.alt = 'Çekilen fotoğraf';
+            
+            // Silme butonu oluşturma
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.onclick = function() {
+                photoContainer.removeChild(photoItem);
+            };
+            
+            // İndirme bağlantısı oluşturma
+            const downloadLink = document.createElement('a');
+            downloadLink.href = dataURL;
+            downloadLink.download = `webcam-photo-${new Date().getTime()}.png`;
+            downloadLink.appendChild(img);
+            
+            // Elementleri birleştirme
+            photoItem.appendChild(downloadLink);
+            photoItem.appendChild(deleteBtn);
+            
+            // Fotoğraf container'ına ekleme
+            photoContainer.appendChild(photoItem);
+            
+            status.textContent = "Fotoğraf başarıyla çekildi! Fotoğrafı indirmek için tıklayın.";
+        }
+        
+        // Event listener'ları ekleme
+        startBtn.addEventListener('click', startWebcam);
+        captureBtn.addEventListener('click', capturePhoto);
+        stopBtn.addEventListener('click', stopWebcam);
+        
+        // Sayfa yüklendiğinde durum mesajını güncelleme
+        window.addEventListener('load', () => {
+            status.textContent = "Webcam'i başlatmak için yukarıdaki butona tıklayın.";
+        });
+    </script>
+</body>
+</html>
